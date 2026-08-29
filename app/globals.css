@@ -48,19 +48,7 @@ body {
   outline-offset: 2px;
 }
 
-.ntt-input {
-  width: 100%;
-  border-radius: 0.75rem;
-  border: 2px solid rgba(11, 31, 42, 0.1);
-  background: white;
-  padding: 0.65rem 0.9rem;
-  font-size: 0.9rem;
-  color: #0b1f2a;
-}
-.ntt-input:focus {
-  outline: none;
-  border-color: #0b84c4;
-}
+
 
 /* ---- Premium hero treatment (same palette, more depth) ---- */
 
@@ -68,7 +56,30 @@ body {
 .hero-glow::before {
   content: '';
   position: absolute;
-  inset: -25% -10% -30% -10%;
+  inset: -25% -10% -30% -10%;.ntt-input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 2px solid rgba(11, 31, 42, 0.1);
+    background: white;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #0b1f2a;
+    box-sizing: border-box;
+  }
+  .ntt-input:focus {
+    outline: none;
+    border-color: #0b84c4;
+  }
+  
+  .ntt-input[type='date'],
+  .ntt-input[type='time'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 3rem;
+    line-height: 1.5;
+  }
+  
   pointer-events: none;
   background:
     radial-gradient(45% 40% at 18% 22%, rgba(47, 191, 143, 0.20), transparent 70%),
