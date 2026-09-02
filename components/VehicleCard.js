@@ -1,12 +1,30 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import { calculatePrice, formatINR } from '@/lib/pricing';
-import { VEHICLE_ICON_MAP } from './Icons';
+
+export const VEHICLE_IMAGE_MAP = {
+  sedan: '/images/sedan.jpeg',
+  suv: '/images/suv.jpeg',
+  innova: '/images/innovacrysta.jpeg',
+  innovacrysta: '/images/innovacrysta.jpeg',
+  crysta: '/images/innovacrysta.jpeg',
+  tt: '/images/tt.jpeg',
+  traveller: '/images/tt.jpeg',
+  tempo: '/images/tt.jpeg',
+  bus: '/images/bus.jpeg',
+};
+
+export function getVehicleImage(vehicle) {
+  const key = (vehicle.id || vehicle.type || vehicle.label || '').toLowerCase();
+  const match = Object.keys(VEHICLE_IMAGE_MAP).find((k) => key.includes(k));
+  return VEHICLE_IMAGE_MAP[match] || '/images/sedan.jpeg';
+}
 
 export default function VehicleCard({ vehicle, vehicles, tripType, km, days, gstRate, onSelect }) {
   const [localPackageIdx, setLocalPackageIdx] = useState(0);
-  const Icon = VEHICLE_ICON_MAP(vehicle);
+  const imageSrc = getVehicleImage(vehicle);
 
   const price = useMemo(
     () =>
@@ -25,8 +43,14 @@ export default function VehicleCard({ vehicle, vehicles, tripType, km, days, gst
   return (
     <div className="flex flex-col justify-between gap-4 rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
       <div className="flex flex-1 gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-mist text-route-teal">
-          <Icon className="h-8 w-8" />
+        <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-mist p-2 sm:h-24 sm:w-32">
+          <Image
+            src={imageSrc}
+            alt={vehicle.label}
+            fill
+            sizes="128px"
+            className="object-contain"
+          />
         </div>
         <div>
           <div className="flex items-center gap-2">

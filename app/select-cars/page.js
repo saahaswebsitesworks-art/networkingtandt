@@ -1,17 +1,20 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import VehicleCard from '@/components/VehicleCard';
-import { TRIP_TYPES, vehiclesForTripType } from '@/lib/pricing';
+import VehicleCard, { getVehicleImage } from '@/components/VehicleCard';
+import { TRIP_TYPES, vehiclesForTripType, calculatePrice, formatINR } from '@/lib/pricing';
 
 function SelectCarsInner() {
   const router = useRouter();
   const params = useSearchParams();
   const [rates, setRates] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
+  const cardRefs = useRef(new Map());
 
   const tripType = params.get('tripType') || 'airport';
   const pickup = params.get('pickup') || '';
@@ -51,6 +54,14 @@ function SelectCarsInner() {
     router.push(`/booking?${next.toString()}`);
   }
 
+  function handleStoryClick(vehicleId) {
+    setSelectedId(vehicleId);
+    const node = cardRefs.current.get(vehicleId);
+    if (node) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
   return (
     <main>
       <Header />
@@ -80,20 +91,79 @@ function SelectCarsInner() {
             No vehicles are configured for this trip type yet. Please call or WhatsApp us directly.
           </div>
         ) : (
-          <div className="space-y-4">
-            {vehicles.map((v) => (
-              <VehicleCard
-                key={v.id}
-                vehicle={v}
-                vehicles={rates.vehicles}
-                tripType={tripType}
-                km={km}
-                days={days}
-                gstRate={rates.settings?.gstRate}
-                onSelect={handleSelect}
-              />
-            ))}
-          </div>
+          <>
+            <div className="mb-6 flex gap-4 overflow-x-auto pb-2">
+              {vehicles.map((v) => {
+                const storyPrice = calculatePrice({
+                  vehicles: rates.vehicles,
+                  vehicleId: v.id,
+                  tripType,
+                  km,
+                  days,
+                  localPackageIdx: 0,
+                  gstRate: rates.settings?.gstRate,
+                });
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => handleStoryClick(v.id)}
+                    className="flex shrink-0 flex-col items-center gap-1"
+                  >
+                    <div
+                      className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 bg-mist p-1.5 ${
+                        selectedId === v.id ? 'border-route-teal' : 'border-black/10'
+                      }`}
+                    >
+                      <Image
+                        src={getVehicleImage(v)}
+                        alt={v.label}
+                        fill
+                        sizes="64px"
+                        className="object-contain"
+                      />
+                    </div>
+                    <span
+                      className={`max-w-[72px] truncate text-xs font-semibold ${
+                        selectedId === v.id ? 'text-route-teal' : 'text-asphalt/70'
+                      }`}
+                    >
+                      {v.label}
+                    </span>
+                    <span className="text-[11px] font-bold text-asphalt/80">
+                      {storyPrice?.enquiryOnly ? 'Enquire' : formatINR(storyPrice?.subtotal)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-4">
+              {vehicles.map((v) => (
+                <div
+                  key={v.id}
+                  ref={(node) => {
+                    if (node) cardRefs.current.set(v.id, node);
+                  }}
+                  className={
+                    selectedId === v.id
+                      ? 'rounded-2xl ring-2 ring-route-teal ring-offset-2'
+                      : ''
+                  }
+                >
+                  <VehicleCard
+                    vehicle={v}
+                    vehicles={rates.vehicles}
+                    tripType={tripType}
+                    km={km}
+                    days={days}
+                    gstRate={rates.settings?.gstRate}
+                    onSelect={handleSelect}
+                  />
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
       <Footer />
