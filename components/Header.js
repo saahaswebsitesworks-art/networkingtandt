@@ -1,17 +1,18 @@
+import Image from 'next/image';
+
 const PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '+917975630631';
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917975630631';
 
 export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
         <a href="/" className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-route-gradient font-display text-lg font-bold text-white shadow-glow">
-            NT
+          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full shadow-glow">
+            <Image src="/images/logo.jpeg" alt="Networking Tours & Travels" fill sizes="64px" className="object-cover" />
           </span>
           <span className="leading-tight">
             <span className="block font-display text-base font-bold tracking-tight text-asphalt sm:text-lg">
-              NETWORKING TOURS &amp; TRAVELS
+              NETWORKING
             </span>
             <span className="block text-xs text-asphalt/50">Thanisandra, Bengaluru</span>
           </span>
@@ -44,12 +45,14 @@ export default function Header() {
             {PHONE}
           </a>
           <a
-            href={`https://wa.me/${WHATSAPP}`}
-            target="_blank"
-            rel="noreferrer"
-            className="focus-ring flex items-center gap-2 rounded-full bg-amber px-4 py-2 text-sm font-bold text-white hover:bg-amber-dark"
+            href="/my-bookings"
+            className="focus-ring flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-asphalt hover:border-route-teal hover:text-route-teal"
           >
-            WhatsApp
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span className="hidden sm:inline">My Bookings</span>
           </a>
         </div>
       </div>
