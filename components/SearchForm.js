@@ -3,28 +3,21 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TRIP_TYPES } from '@/lib/pricing';
-import { PlaneIcon, ClockIcon, RouteIcon, ShieldIcon, RupeeIcon } from './Icons';
+import { PlaneIcon, ClockIcon, RouteIcon, ArrowRouteIcon, ShieldIcon, RupeeIcon } from './Icons';
 import PlaceInput from './PlaceInput';
 import { geocodeAddress, calcRouteKm } from '@/lib/geo';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
-// Short banner shown between the trip-type tabs and the form fields —
-// purely decorative branding text, easy to change here in one place.
-const TAGLINE = "BENGALURU'S TRUSTED CAB SERVICE";
-
 // The "group / enquiry" trip type lives in the nav bar (Group Booking page)
-// instead of as a tab here, since it doesn't take a normal search. "oneway"
-// is also excluded from the main tab row — it's folded into the Outstation
-// tab as a One Way / Round Trip sub-toggle instead of being its own tab
-// (see the toggle below). Its tripType value ('oneway') is unchanged, so
-// pricing/booking on the results page keeps working exactly as before.
-const MAIN_TABS = TRIP_TYPES.filter((t) => t.id !== 'group' && t.id !== 'oneway');
+// instead of as a tab here, since it doesn't take a normal search.
+const HOME_TRIP_TYPES = TRIP_TYPES.filter((t) => t.id !== 'group');
 
 const TAB_ICONS = {
   airport: PlaneIcon,
   local: ClockIcon,
   outstation: RouteIcon,
+  oneway: ArrowRouteIcon,
 };
 
 let stopIdCounter = 0;
@@ -71,7 +64,9 @@ function HeadsetIcon({ className = 'h-4 w-4' }) {
   );
 }
 
-// Rounded, pale-tinted card used for the From / To / Trip-start fields.
+// Rounded, pale-tinted card used for the From / To / Trip-start fields —
+// visually groups an icon + label + value the way the reference screenshot
+// does, instead of a bare labeled input.
 function CardField({ icon: Icon, label, children }) {
   return (
     <div className="rounded-2xl border border-route-teal/15 bg-route-teal/[0.04] px-4 py-3 transition focus-within:border-route-teal/50">
@@ -104,14 +99,15 @@ function SearchFormInner() {
   const [returnDate, setReturnDate] = useState(todayStr());
 
   const [km, setKm] = useState(0);
-  // 'idle' | 'calculating' | 'auto' | 'error' — distance is always computed
-  // from a real route, and calculated silently in the background; it's
-  // only surfaced near the submit button if something needs attention.
+  // 'idle' | 'calculating' | 'auto' | 'error' — there's no manual entry
+  // anymore: distance always comes from a real route calculation. It's
+  // computed silently in the background (not shown as its own field) and
+  // only surfaces to the user via the status line near the submit button
+  // if something needs their attention.
   const [kmStatus, setKmStatus] = useState('idle');
   const [error, setError] = useState('');
 
-  const isOutstationGroup = tripType === 'outstation' || tripType === 'oneway';
-  const usesRoute = tripType === 'airport' || isOutstationGroup;
+  const usesRoute = tripType === 'airport' || tripType === 'outstation' || tripType === 'oneway';
 
   // Silently resolve any pre-filled pickup/drop text (from Popular Routes
   // links) into map coordinates, without forcing the user to re-pick from
@@ -140,7 +136,7 @@ function SearchFormInner() {
     (async () => {
       try {
         const stopPlaces = stops.filter((s) => s.place).map((s) => s.place);
-        // Outstation round trip: pickup -> stops -> destination -> back to pickup.
+        // Outstation is a round trip: pickup -> stops -> destination -> back to pickup.
         const destination = tripType === 'outstation' ? pickupPlace : dropPlace;
         const waypoints = tripType === 'outstation' ? [...stopPlaces, dropPlace] : [];
         const result = await calcRouteKm(pickupPlace, destination, waypoints);
@@ -175,17 +171,6 @@ function SearchFormInner() {
     setDrop(prevPickup);
     setDropPlace(prevPickupPlace);
     setKmStatus('idle');
-  }
-
-  // Clicking a main tab: Airport/Local switch directly. The Outstation tab
-  // represents a group of two tripType values (oneway / outstation) — if
-  // neither is already active, default to One Way (matches the reference
-  // design, which highlights "One Way" by default).
-  function selectMainTab(id) {
-    const nextType = id === 'outstation' ? (isOutstationGroup ? tripType : 'oneway') : id;
-    setTripType(nextType);
-    setError('');
-    if (nextType !== 'outstation') setStops([]);
   }
 
   function handleSubmit(e) {
@@ -242,19 +227,25 @@ function SearchFormInner() {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl border border-black/5 bg-white p-6 shadow-lift sm:p-8">
-      {/* Trip type tabs — one connected segmented control */}
-      <div className="flex overflow-hidden rounded-2xl border-2 border-black/10">
-        {MAIN_TABS.map((t, i) => {
+      {/* Trip type tabs, segmented-control style */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+        {HOME_TRIP_TYPES.map((t) => {
           const Icon = TAB_ICONS[t.id];
-          const active = t.id === 'outstation' ? isOutstationGroup : tripType === t.id;
+          const active = tripType === t.id;
           return (
             <button
               type="button"
               key={t.id}
-              onClick={() => selectMainTab(t.id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 px-2 py-3 text-[11px] font-bold uppercase tracking-wide transition sm:text-sm ${
-                i !== 0 ? 'border-l border-black/10' : ''
-              } ${active ? 'bg-route-teal text-white' : 'bg-white text-asphalt/70 hover:bg-route-teal/5'}`}
+              onClick={() => {
+                setTripType(t.id);
+                setError('');
+                if (t.id !== 'outstation') setStops([]);
+              }}
+              className={`focus-ring flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-xs font-bold uppercase tracking-wide transition sm:text-sm ${
+                active
+                  ? 'border-route-teal bg-route-teal text-white shadow-sm'
+                  : 'border-black/10 text-asphalt/60 hover:border-route-teal/40 hover:text-asphalt'
+              }`}
             >
               {Icon && <Icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />}
               {t.label}
@@ -263,48 +254,8 @@ function SearchFormInner() {
         })}
       </div>
 
-      {/* Decorative tagline banner */}
-      <div className="mt-4 flex items-center gap-3">
-        <span className="h-px flex-1 bg-route-teal/30" />
-        <span className="shrink-0 text-center text-xs font-extrabold uppercase tracking-wide text-asphalt sm:text-sm">{TAGLINE}</span>
-        <span className="h-px flex-1 bg-route-teal/30" />
-      </div>
-
-      {/* One Way / Round Trip sub-toggle — only for the Outstation group */}
-      {isOutstationGroup && (
-        <div className="mt-4 flex overflow-hidden rounded-2xl border-2 border-black/10">
-          <button
-            type="button"
-            onClick={() => {
-              setTripType('oneway');
-              setError('');
-              setStops([]);
-            }}
-            className={`flex-1 border-r border-black/10 px-3 py-2.5 text-center transition ${
-              tripType === 'oneway' ? 'bg-route-teal text-white' : 'bg-white text-asphalt hover:bg-route-teal/5'
-            }`}
-          >
-            <span className="block text-sm font-extrabold uppercase tracking-wide">One Way</span>
-            <span className={`block text-[11px] ${tripType === 'oneway' ? 'text-white/80' : 'text-asphalt/50'}`}>Drop-off Only</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTripType('outstation');
-              setError('');
-            }}
-            className={`flex-1 px-3 py-2.5 text-center transition ${
-              tripType === 'outstation' ? 'bg-route-teal text-white' : 'bg-white text-asphalt hover:bg-route-teal/5'
-            }`}
-          >
-            <span className="block text-sm font-extrabold uppercase tracking-wide">Round Trip</span>
-            <span className={`block text-[11px] ${tripType === 'outstation' ? 'text-white/80' : 'text-asphalt/50'}`}>Return With Same Cab</span>
-          </button>
-        </div>
-      )}
-
       {/* Route: From / To, stacked, with a swap button floating at the seam */}
-      <div className="relative mt-4 flex flex-col gap-3">
+      <div className="relative mt-6 flex flex-col gap-3">
         <CardField icon={PinIcon} label="From">
           {usesRoute ? (
             <PlaceInput
@@ -424,7 +375,8 @@ function SearchFormInner() {
         )}
       </div>
 
-      {/* Quiet status line — only appears while calculating or on error */}
+      {/* Quiet status line — only appears while calculating or on error;
+          once resolved, distance/fare shows on the results page, not here. */}
       {usesRoute && (kmStatus === 'calculating' || kmStatus === 'error') && (
         <p className={`mt-3 text-center text-xs font-medium ${kmStatus === 'error' ? 'text-amber-dark' : 'text-asphalt/50'}`}>
           {kmStatus === 'calculating' ? 'Calculating distance…' : "Couldn't calculate distance — try re-selecting pickup and drop."}
