@@ -6,37 +6,38 @@ export default function AboutSeo() {
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-route-teal">Thanisandra &amp; beyond</div>
           <h2 className="mt-1 font-display text-3xl font-bold text-asphalt">
-            Bengaluru&apos;s taxi service, built around your convenience
+            Bangalore taxi service, trusted across the city
           </h2>
           <div className="mt-4 space-y-4 text-sm leading-relaxed text-asphalt/70">
             <p>
-              Networking Tours &amp; Travels runs a chauffeur-driven cab and taxi service out of Thanisandra, right
-              next to Manyata Tech Park — one of Bengaluru&apos;s busiest office corridors. Whether you&apos;re
-              commuting to work, catching a flight from Kempegowda International Airport, or planning a weekend
-              drive out of the city, our cabs are booked the same simple way: pick a trip, confirm, and pay the
-              driver once you&apos;re there.
+              Networking Tours &amp; Travels is a Bangalore taxi service provider near you, running a
+              chauffeur-driven cab and taxi service out of Thanisandra, right next to Manyata Tech Park — one
+              of the city&apos;s busiest office corridors. Whether it&apos;s a daily commute, an airport taxi
+              booking for Kempegowda International Airport, or a weekend drive out of town, our cab booking
+              stays simple: pick a trip, confirm online, and pay the driver once you&apos;re there.
             </p>
             <p>
-              Our fleet covers every kind of trip a Bengaluru traveller needs — compact sedans for a quick airport
-              run, spacious SUVs and Innova Crysta for family trips, and AC tempo travellers for larger groups
-              heading out together. Every driver on our network is verified and familiar with the city&apos;s
-              routes, from the tech corridors of Hebbal and Manyata to the older lanes of Basavanagudi and
-              Malleswaram.
+              Our fleet covers every kind of trip a Bangalore traveller needs — Swift Dzire and Toyota Etios
+              sedans for a quick airport pickup cab or drop, Maruti Ertiga and Toyota Innova Crysta SUVs for
+              family trips, and 12 Seater Tempo Travellers through 21, 33 and 50 Seater buses for larger
+              groups and corporate tours. Every driver on our network is verified, with clean, sanitized cabs
+              and live GPS tracking on every trip — from the tech corridors of Hebbal and Manyata to the
+              older lanes of Basavanagudi and Malleswaram.
             </p>
             <p>
-              Outstation? We regularly run cabs from Bangalore to Mysore, Coorg, Chikmagalur, Tirupati, Chennai and
-              beyond, with clear per-day pricing and no surprises at the end of the trip. Need to get somewhere and
-              don&apos;t want to pay for the return leg? Our one-way drop service charges only for the distance you
-              actually travel.
+              Outstation cabs Bangalore to Mysore, Coorg, Chikmagalur, Tirupati, Chennai and beyond run with
+              clear per-day pricing and no surprises at the end of the trip. Need a one way airport taxi or
+              long-distance drop without paying for the return leg? Our one-way drop service charges only for
+              the distance you actually travel — toll, parking and state permit charges extra as per actuals.
             </p>
             <p>
               Above all, we&apos;ve built this site around one idea: you shouldn&apos;t have to pay before you
-              ride. Every booking here is confirmed with zero advance — you settle the fare with your driver in
-              cash or UPI once your trip is done.
+              ride. Every booking is confirmed with flexible payment — 0%, 25% or 100% advance, your choice —
+              and you settle the rest with your driver in cash or UPI once your trip is done.
             </p>
           </div>
           <p className="mt-6 font-display text-sm font-semibold text-asphalt">
-            Trust us when we say: Bengaluru moves better with Networking Tours &amp; Travels.
+            100% on-time pickup guaranteed — Bangalore moves better with Networking Tours &amp; Travels.
           </p>
         </div>
       </div>
