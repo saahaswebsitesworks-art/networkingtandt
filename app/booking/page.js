@@ -11,10 +11,74 @@ import { PAYMENT_OPTIONS, paymentBreakdown } from '@/lib/payments';
 
 const RAZORPAY_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
 
+// Inline icons (no external icon package needed)
+function ChevronDownIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+function CheckIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+function XIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, gstRate }) {
+  const inclusions = ['Base Fare and Fuel Charges'];
+  const exclusions = [];
+
+  const effectiveGstRate = price?.gstRate ?? gstRate ?? 0.05;
+  inclusions.push(`GST (${Math.round(effectiveGstRate * 100)}%)`);
+
+  if (tripType === 'outstation' && vehicle?.outstation) {
+    inclusions.push(`Driver Allowance (₹${vehicle.outstation.da}/day)`);
+    exclusions.push('Toll, State Tax & Parking — pay as applicable');
+  } else if (tripType === 'oneway' && vehicle?.oneWay) {
+    inclusions.push(`Driver Allowance (₹${vehicle.oneWay.da})`);
+    exclusions.push('Toll, State Tax & Parking — pay as applicable');
+  } else if (tripType === 'airport') {
+    inclusions.push('Driver Allowance');
+  }
+
+  inclusions.push('AC');
+
+  if (tripType === 'local' && vehicle?.local?.packages?.length) {
+    const pkg = vehicle.local.packages[localPackageIdx] || vehicle.local.packages[0];
+    exclusions.push(`Beyond package: ₹${vehicle.local.extraKmRate}/km after ${pkg.km} km`);
+    exclusions.push(`Extra hour beyond ${pkg.hrs} hrs: ₹${vehicle.local.extraHrRate}/hr`);
+  } else if (tripType === 'airport' && vehicle?.airport && !vehicle.airport.flat) {
+    exclusions.push(`Beyond min ${vehicle.airport.minKm} km, charged at ₹${vehicle.airport.ratePerKm}/km`);
+  }
+
+  exclusions.push('Multiple pickups/drops not in original route');
+
+  return { inclusions, exclusions };
+}
+
+const TERMS_TEXT = [
+  'Your trip has a KM limit. If your usage exceeds this limit, you will be charged for the excess KM used.',
+  'Your trip includes one pick-up and one drop as per the details provided. It does not include within-city travel beyond the route.',
+  'If your trip has hill climbs, cab AC may be switched off during such climbs.',
+  'Waiting time beyond 15 minutes at pickup may be chargeable as per driver discretion.',
+];
+
 function BookingInner() {
   const router = useRouter();
   const params = useSearchParams();
   const [rates, setRates] = useState(null);
+  const [termsOpen, setTermsOpen] = useState(false);
 
   const tripType = params.get('tripType') || 'airport';
   const vehicleId = params.get('vehicleId') || '';
@@ -69,6 +133,11 @@ function BookingInner() {
 
   const vehicle = rates?.vehicles?.[vehicleId];
   const tripTypeLabel = TRIP_TYPES.find((t) => t.id === tripType)?.label || tripType;
+
+  const { inclusions, exclusions } = useMemo(() => {
+    if (!vehicle) return { inclusions: [], exclusions: [] };
+    return buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, gstRate: rates?.settings?.gstRate });
+  }, [tripType, vehicle, price, localPackageIdx, rates]);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -287,13 +356,74 @@ function BookingInner() {
                 </div>
               )}
 
+              {/* Inclusions / Exclusions */}
+              {(inclusions.length > 0 || exclusions.length > 0) && (
+                <div className="mt-4 rounded-xl border border-black/5 p-4 sm:p-5">
+                  <h2 className="font-display text-base font-bold text-asphalt">Inclusions/Exclusions</h2>
+
+                  {inclusions.length > 0 && (
+                    <div className="mt-4">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        <span className="text-sm font-semibold text-emerald-600">Inclusions</span>
+                      </div>
+                      <ul className="mt-2 space-y-2">
+                        {inclusions.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-asphalt/80">
+                            <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {exclusions.length > 0 && (
+                    <div className="mt-5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-red-500" />
+                        <span className="text-sm font-semibold text-red-500">Exclusions</span>
+                      </div>
+                      <ul className="mt-2 space-y-2">
+                        {exclusions.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-asphalt/80">
+                            <XIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setTermsOpen((o) => !o)}
+                    className="focus-ring mt-5 flex w-full items-center justify-between border-t border-black/10 pt-4 text-sm font-semibold text-route-teal"
+                  >
+                    <span>Read Terms and Conditions</span>
+                    <ChevronDownIcon className={`h-4 w-4 transition-transform ${termsOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {termsOpen && (
+                    <ul className="mt-3 space-y-2 rounded-lg bg-mist p-4 text-xs text-asphalt/70">
+                      {TERMS_TEXT.map((t, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-asphalt/40" />
+                          <span>{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               {/* Payment options */}
               {!enquiryOnly && (
                 <div className="mt-6">
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-asphalt/50">
                     Payment
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {PAYMENT_OPTIONS.map((opt) => {
                       const b = paymentBreakdown(total, opt.id);
                       const active = paymentOption === opt.id;
@@ -302,28 +432,18 @@ function BookingInner() {
                           type="button"
                           key={opt.id}
                           onClick={() => setPaymentOption(opt.id)}
-                          className={`focus-ring rounded-xl border-2 p-4 text-left transition ${
+                          className={`focus-ring rounded-xl border-2 px-3 py-2.5 text-left transition ${
                             active
-                              ? 'border-route-teal bg-route-teal/5 shadow-sm'
+                              ? 'border-route-teal bg-route-teal/5'
                               : 'border-black/10 hover:border-route-teal/40'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wide text-route-teal">{opt.tagline}</span>
-                            <span
-                              className={`h-4 w-4 rounded-full border-2 ${
-                                active ? 'border-route-teal bg-route-teal' : 'border-black/20'
-                              }`}
-                            />
+                          <div className="text-xs font-bold text-asphalt">
+                            {opt.pct === 0 ? 'Book at ₹0' : opt.pct === 1 ? 'Pay 100%' : `Pay ${Math.round(opt.pct * 100)}%`}
                           </div>
-                          <div className="mt-2 font-display text-lg font-bold text-asphalt">
-                            {opt.pct > 0 ? formatINR(b.payNow) : '₹0'}
-                            <span className="ml-1 text-xs font-medium text-asphalt/40">now</span>
+                          <div className="mt-0.5 text-[11px] text-asphalt/50">
+                            {opt.pct > 0 ? `${formatINR(b.payNow)} now` : 'Pay later'}
                           </div>
-                          <div className="mt-1 text-xs text-asphalt/60">{opt.desc}</div>
-                          {opt.pct > 0 && opt.pct < 1 && (
-                            <div className="mt-1 text-[11px] text-asphalt/40">Balance {formatINR(b.balance)} to driver</div>
-                          )}
                         </button>
                       );
                     })}
@@ -336,19 +456,51 @@ function BookingInner() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
-                <Field label="Full name">
-                  <input value={name} onChange={(e) => setName(e.target.value)} className="ntt-input" required />
-                </Field>
-                <Field label="Phone number">
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="10-digit mobile number" className="ntt-input" required />
-                </Field>
-                <Field label="Email (optional)">
-                  <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="ntt-input" />
-                </Field>
-                <Field label="Notes (optional)">
-                  <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Flight number, luggage, etc." className="ntt-input" />
-                </Field>
+              <form onSubmit={handleSubmit} className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Full Name"
+                    className="w-full rounded-2xl border-2 border-black/10 bg-mist px-4 py-4 text-base font-bold text-asphalt placeholder:font-bold placeholder:text-asphalt/40 outline-none transition focus:border-route-teal focus:bg-route-teal/5"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-2 sm:col-span-2">
+                  <div className="flex w-20 shrink-0 items-center justify-center rounded-2xl border-2 border-black/10 bg-mist text-base font-bold text-asphalt/70">
+                    +91
+                  </div>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder="Mobile No."
+                    className="w-full rounded-2xl border-2 border-black/10 bg-mist px-4 py-4 text-base font-bold text-asphalt placeholder:font-bold placeholder:text-asphalt/40 outline-none transition focus:border-route-teal focus:bg-route-teal/5"
+                    required
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                    placeholder="Email ID (optional)"
+                    className="w-full rounded-2xl border-2 border-black/10 bg-mist px-4 py-4 text-base font-bold text-asphalt placeholder:font-bold placeholder:text-asphalt/40 outline-none transition focus:border-route-teal focus:bg-route-teal/5"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <input
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Notes — flight number, luggage, etc. (optional)"
+                    className="w-full rounded-2xl border-2 border-black/10 bg-mist px-4 py-4 text-base font-bold text-asphalt placeholder:font-bold placeholder:text-asphalt/40 outline-none transition focus:border-route-teal focus:bg-route-teal/5"
+                  />
+                </div>
 
                 {error && <p className="text-sm font-medium text-amber-dark sm:col-span-2">{error}</p>}
 
@@ -366,15 +518,6 @@ function BookingInner() {
       </div>
       <Footer />
     </main>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-asphalt/50">{label}</span>
-      {children}
-    </label>
   );
 }
 
