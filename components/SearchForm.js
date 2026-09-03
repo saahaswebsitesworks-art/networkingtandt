@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TRIP_TYPES } from '@/lib/pricing';
-import { PlaneIcon, ClockIcon, RouteIcon, ArrowRouteIcon, ShieldIcon, RupeeIcon } from './Icons';
+import { ShieldIcon, RupeeIcon } from './Icons';
 import PlaceInput from './PlaceInput';
 import { geocodeAddress, calcRouteKm } from '@/lib/geo';
 
@@ -12,13 +12,6 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 // The "group / enquiry" trip type lives in the nav bar (Group Booking page)
 // instead of as a tab here, since it doesn't take a normal search.
 const HOME_TRIP_TYPES = TRIP_TYPES.filter((t) => t.id !== 'group');
-
-const TAB_ICONS = {
-  airport: PlaneIcon,
-  local: ClockIcon,
-  outstation: RouteIcon,
-  oneway: ArrowRouteIcon,
-};
 
 let stopIdCounter = 0;
 const newStop = () => ({ _id: ++stopIdCounter, address: '', place: null });
@@ -227,10 +220,9 @@ function SearchFormInner() {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl border border-black/5 bg-white p-6 shadow-lift sm:p-8">
-      {/* Trip type tabs, segmented-control style */}
+      {/* Trip type tabs, segmented-control style — text only, no icons */}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
         {HOME_TRIP_TYPES.map((t) => {
-          const Icon = TAB_ICONS[t.id];
           const active = tripType === t.id;
           return (
             <button
@@ -241,13 +233,12 @@ function SearchFormInner() {
                 setError('');
                 if (t.id !== 'outstation') setStops([]);
               }}
-              className={`focus-ring flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-xs font-bold uppercase tracking-wide transition sm:text-sm ${
+              className={`focus-ring flex items-center justify-center rounded-xl border-2 px-4 py-3 text-xs font-bold uppercase tracking-wide transition sm:text-sm ${
                 active
                   ? 'border-route-teal bg-route-teal text-white shadow-sm'
                   : 'border-black/10 text-asphalt/60 hover:border-route-teal/40 hover:text-asphalt'
               }`}
             >
-              {Icon && <Icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />}
               {t.label}
             </button>
           );
@@ -265,7 +256,7 @@ function SearchFormInner() {
                 setKmStatus('idle');
               }}
               onPlaceSelect={setPickupPlace}
-              placeholder="e.g. Kempegowda Airport"
+              placeholder="Enter pickup location"
               required
               className={cardInputClass}
             />
@@ -273,7 +264,7 @@ function SearchFormInner() {
             <input
               value={pickup}
               onChange={(e) => setPickup(e.target.value)}
-              placeholder="e.g. Manyata Tech Park"
+              placeholder="Enter pickup location"
               className={cardInputClass}
               required
             />
@@ -289,7 +280,7 @@ function SearchFormInner() {
                 setKmStatus('idle');
               }}
               onPlaceSelect={setDropPlace}
-              placeholder="e.g. Thanisandra, Bengaluru"
+              placeholder="Enter destination"
               required
               className={cardInputClass}
             />

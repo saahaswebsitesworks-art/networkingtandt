@@ -30,11 +30,21 @@ module.exports = {
       backgroundImage: {
         'route-gradient': 'linear-gradient(120deg, #0B84C4 0%, #12A6D6 100%)',
         'asphalt-gradient': 'linear-gradient(160deg, #071620 0%, #0B2C42 55%, #0B4A68 100%)',
+        'forest-gradient': 'linear-gradient(160deg, #0F2E1E 0%, #14432B 55%, #1D5B3A 100%)',
       },
       boxShadow: {
         ticket: '0 20px 45px -18px rgba(11,31,42,0.35)',
         lift: '0 34px 70px -28px rgba(11,31,42,0.5)',
         glow: '0 0 0 1px rgba(255,255,255,0.06), 0 24px 60px -24px rgba(11,132,196,0.55)',
+      },
+      animation: {
+        marquee: 'marquee 120s linear infinite',
+      },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
       },
     },
   },

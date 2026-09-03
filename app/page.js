@@ -15,46 +15,13 @@ export default function Home() {
       <TravelExpertPopup />
       <Header />
 
-      {/* Dark hero band, like a road at dusk — headline only, card floats below */}
-      <section className="hero-glow relative overflow-hidden bg-asphalt-gradient pb-28 pt-16 text-white sm:pb-40 sm:pt-24">
-        <div className="dot-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+      {/* Classic deep-green hero — single line, no icons, no paragraph */}
+      <section className="relative overflow-hidden bg-forest-gradient pb-14 pt-10 text-white sm:pb-20 sm:pt-14">
         <HeroRoute />
         <div className="relative mx-auto max-w-5xl px-5 text-center">
-          <div className="rise rise-1 glass inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide text-white/90">
-            <span className="text-route-green">★ 4.9</span>
-            <span className="h-3 w-px bg-white/20" />
-            161 Google reviews
-            <span className="hidden h-3 w-px bg-white/20 sm:block" />
-            <span className="hidden sm:inline">Thanisandra, Bengaluru</span>
-          </div>
-
-          <h1 className="rise rise-2 mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-            Premium rides across
-            <br className="hidden sm:block" />{' '}
-            <span className="text-gradient">Bengaluru &amp; beyond</span>
+          <h1 className="rise rise-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
+            Karnataka&apos;s trusted taxi service
           </h1>
-
-          <p className="rise rise-3 mx-auto mt-5 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
-            Airport transfers, local rentals, outstation trips &amp; tempo travellers. Pay your way — settle
-            after the ride, or lock your cab with a 25% or full advance.
-          </p>
-
-          <div className="rise rise-4 mt-7 flex flex-wrap items-center justify-center gap-2.5 text-xs font-medium text-white/85">
-            {['Flexible payment', 'Upfront fixed fares', '24×7 support', 'Verified chauffeurs'].map((t) => (
-              <span key={t} className="glass inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5">
-                <svg className="h-3.5 w-3.5 text-route-green" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path
-                    d="M4 10.5l3.5 3.5L16 6"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {t}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -99,27 +66,27 @@ function HeroRoute() {
   // dusk. Motion is subtle and disabled under prefers-reduced-motion.
   return (
     <svg
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-[80%] w-full opacity-90"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%] w-full opacity-90"
       viewBox="0 0 1200 400"
       preserveAspectRatio="none"
       aria-hidden="true"
     >
       <defs>
         <linearGradient id="routeStroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#0B84C4" />
+          <stop offset="0" stopColor="#7FD9AE" />
           <stop offset="1" stopColor="#2FBF8F" />
         </linearGradient>
       </defs>
 
       {/* faint city edge */}
       <g opacity="0.5">
-        <rect x="40" y="250" width="70" height="150" fill="#0B3A55" />
-        <rect x="130" y="210" width="50" height="190" fill="#0B4A68" />
-        <rect x="200" y="270" width="90" height="130" fill="#0B3A55" />
-        <rect x="310" y="235" width="60" height="165" fill="#0B4A68" />
-        <rect x="900" y="255" width="80" height="145" fill="#0B3A55" />
-        <rect x="1000" y="225" width="55" height="175" fill="#0B4A68" />
-        <rect x="1080" y="280" width="90" height="120" fill="#0B3A55" />
+        <rect x="40" y="250" width="70" height="150" fill="#123B26" />
+        <rect x="130" y="210" width="50" height="190" fill="#1D5B3A" />
+        <rect x="200" y="270" width="90" height="130" fill="#123B26" />
+        <rect x="310" y="235" width="60" height="165" fill="#1D5B3A" />
+        <rect x="900" y="255" width="80" height="145" fill="#123B26" />
+        <rect x="1000" y="225" width="55" height="175" fill="#1D5B3A" />
+        <rect x="1080" y="280" width="90" height="120" fill="#123B26" />
       </g>
 
       {/* faint static base route */}
