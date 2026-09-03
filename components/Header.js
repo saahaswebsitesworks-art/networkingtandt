@@ -14,7 +14,7 @@ export default function Header() {
             <span className="block font-display text-base font-bold tracking-tight text-asphalt sm:text-lg">
               NETWORKING
             </span>
-            <span className="block text-xs text-asphalt/50">Thanisandra, Bengaluru</span>
+            <span className="block text-xs text-asphalt/50"> Bengaluru</span>
           </span>
         </a>
 
