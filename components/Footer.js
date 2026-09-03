@@ -453,7 +453,7 @@ export default function Footer() {
           rel="noreferrer"
           className="mt-4 inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold hover:bg-white/25"
         >
-          ★ 4.9 rated &middot; 161 Google reviews
+          ★ 4.9 rated &middot; Google reviews
         </a>
       </div>
 

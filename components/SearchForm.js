@@ -385,12 +385,15 @@ function SearchFormInner() {
         </button>
       </div>
 
-      <p className="mt-3 text-center text-xs text-asphalt/40">
-        Booking a bus or tempo traveller for a large group?{' '}
-        <a href="/group-booking" className="font-semibold text-route-teal hover:underline">
-          Enquire here
-        </a>
-      </p>
+      {/* Highlighted large-format enquiry banner for group bookings */}
+      <div className="mt-4 flex justify-center">
+        <p className="rounded-full bg-route-teal/10 px-4 py-2 text-center text-[15px] font-medium text-asphalt/70">
+          Booking a bus or tempo traveller for a large group?{' '}
+          <a href="/group-booking" className="font-bold text-route-teal hover:underline">
+            Enquire here
+          </a>
+        </p>
+      </div>
 
       {/* Trust badges */}
       <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold text-asphalt/60">
