@@ -1,14 +1,14 @@
 import { RouteIcon } from './Icons';
 
 const ROUTES = [
-  'Chennai',
-  'Mysore',
   'Adiyogi, Chikkaballapura',
+  'Mysore',
   'Coorg',
   'Ooty',
   'Munnar',
   'Chikmagalur',
   'Murudeshwara',
+  'Chennai',
   'Hyderabad',
 ];
 

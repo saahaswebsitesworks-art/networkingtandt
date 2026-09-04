@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import VehicleCard, { getVehicleImage } from '@/components/VehicleCard';
 import { TRIP_TYPES, vehiclesForTripType, calculatePrice, formatINR } from '@/lib/pricing';
+import { groupVehicles, getGroupLabel } from '@/lib/vehicleGrouping';
 
 function SelectCarsInner() {
   const router = useRouter();
@@ -46,6 +47,9 @@ function SelectCarsInner() {
 
   const tripTypeLabel = TRIP_TYPES.find((t) => t.id === tripType)?.label || tripType;
   const vehicles = rates ? vehiclesForTripType(rates.vehicles, tripType) : [];
+  // Group tt_ac / tt_nonac (and any other configured variant pairs) into a
+  // single logical vehicle so they render as one story avatar and one card.
+  const vehicleGroups = groupVehicles(vehicles);
 
   function handleSelect({ vehicleId, localPackageIdx, price }) {
     const next = new URLSearchParams(params.toString());
@@ -54,9 +58,10 @@ function SelectCarsInner() {
     router.push(`/booking?${next.toString()}`);
   }
 
-  function handleStoryClick(vehicleId) {
-    setSelectedId(vehicleId);
-    const node = cardRefs.current.get(vehicleId);
+  // Story row now selects/scrolls by group id (e.g. 'tt'), not raw vehicle id.
+  function handleStoryClick(baseId) {
+    setSelectedId(baseId);
+    const node = cardRefs.current.get(baseId);
     if (node) {
       node.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -86,17 +91,20 @@ function SelectCarsInner() {
       <div className="mx-auto max-w-5xl px-5 py-8">
         {loading ? (
           <p className="text-sm text-asphalt/50">Loading cabs…</p>
-        ) : vehicles.length === 0 ? (
+        ) : vehicleGroups.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-black/10 bg-white p-10 text-center text-sm text-asphalt/50">
             No vehicles are configured for this trip type yet. Please call or WhatsApp us directly.
           </div>
         ) : (
           <>
             <div className="mb-6 flex gap-4 overflow-x-auto pb-2">
-              {vehicles.map((v) => {
+              {vehicleGroups.map((group) => {
+                // Representative variant for the story avatar's image/price
+                // preview (defaults to the first variant, e.g. tt_ac).
+                const representative = group.variants[0];
                 const storyPrice = calculatePrice({
                   vehicles: rates.vehicles,
-                  vehicleId: v.id,
+                  vehicleId: representative.id,
                   tripType,
                   km,
                   days,
@@ -105,19 +113,19 @@ function SelectCarsInner() {
                 });
                 return (
                   <button
-                    key={v.id}
+                    key={group.baseId}
                     type="button"
-                    onClick={() => handleStoryClick(v.id)}
+                    onClick={() => handleStoryClick(group.baseId)}
                     className="flex shrink-0 flex-col items-center gap-1"
                   >
                     <div
                       className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 bg-mist p-1.5 ${
-                        selectedId === v.id ? 'border-route-teal' : 'border-black/10'
+                        selectedId === group.baseId ? 'border-route-teal' : 'border-black/10'
                       }`}
                     >
                       <Image
-                        src={getVehicleImage(v)}
-                        alt={v.label}
+                        src={getVehicleImage(representative)}
+                        alt={getGroupLabel(group)}
                         fill
                         sizes="64px"
                         className="object-contain"
@@ -125,10 +133,10 @@ function SelectCarsInner() {
                     </div>
                     <span
                       className={`max-w-[72px] truncate text-xs font-semibold ${
-                        selectedId === v.id ? 'text-route-teal' : 'text-asphalt/70'
+                        selectedId === group.baseId ? 'text-route-teal' : 'text-asphalt/70'
                       }`}
                     >
-                      {v.label}
+                      {getGroupLabel(group)}
                     </span>
                     <span className="text-[11px] font-bold text-asphalt/80">
                       {storyPrice?.enquiryOnly ? 'Enquire' : formatINR(storyPrice?.subtotal)}
@@ -139,20 +147,20 @@ function SelectCarsInner() {
             </div>
 
             <div className="space-y-4">
-              {vehicles.map((v) => (
+              {vehicleGroups.map((group) => (
                 <div
-                  key={v.id}
+                  key={group.baseId}
                   ref={(node) => {
-                    if (node) cardRefs.current.set(v.id, node);
+                    if (node) cardRefs.current.set(group.baseId, node);
                   }}
                   className={
-                    selectedId === v.id
+                    selectedId === group.baseId
                       ? 'rounded-2xl ring-2 ring-route-teal ring-offset-2'
                       : ''
                   }
                 >
                   <VehicleCard
-                    vehicle={v}
+                    group={group}
                     vehicles={rates.vehicles}
                     tripType={tripType}
                     km={km}

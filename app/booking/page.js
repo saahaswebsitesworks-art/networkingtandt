@@ -6,34 +6,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ConfirmationCard from '@/components/ConfirmationCard';
 import RouteMapEmbed from '@/components/RouteMapEmbed';
+import TripDetailsTabs from '@/components/TripDetailsTabs';
 import { TRIP_TYPES, calculatePrice, formatINR } from '@/lib/pricing';
 import { PAYMENT_OPTIONS, paymentBreakdown } from '@/lib/payments';
 
 const RAZORPAY_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
-
-// Inline icons (no external icon package needed)
-function ChevronDownIcon({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-}
-function CheckIcon({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-function XIcon({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
 
 function buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, gstRate }) {
   const inclusions = ['Base Fare and Fuel Charges'];
@@ -52,8 +29,6 @@ function buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, 
     inclusions.push('Driver Allowance');
   }
 
-  inclusions.push('AC');
-
   if (tripType === 'local' && vehicle?.local?.packages?.length) {
     const pkg = vehicle.local.packages[localPackageIdx] || vehicle.local.packages[0];
     exclusions.push(`Beyond package: ₹${vehicle.local.extraKmRate}/km after ${pkg.km} km`);
@@ -67,6 +42,24 @@ function buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, 
   return { inclusions, exclusions };
 }
 
+// Facilities are derived straight from the vehicle, independent of trip
+// type. AC/Non-AC is read from the vehicle's label text rather than
+// assumed, so it stays correct for vehicles like the Non-AC Tempo
+// Traveller (previously "AC" was always shown as an inclusion for every
+// vehicle, which was wrong for Non-AC options).
+// Bags is only shown when the vehicle defines a `bags` count in the rates
+// data — Tempo Traveller intentionally has none set, so no bags line shows
+// for it.
+function buildFacilities(vehicle) {
+  if (!vehicle) return [];
+  const facilities = [];
+  if (vehicle.seats) facilities.push(`${vehicle.seats} Seater`);
+  if (vehicle.bags) facilities.push(`${vehicle.bags} Bags`);
+  const isNonAc = /non[\s-]?ac/i.test(vehicle.label || '');
+  facilities.push(isNonAc ? 'Non-AC' : 'AC');
+  return facilities;
+}
+
 const TERMS_TEXT = [
   'Your trip has a KM limit. If your usage exceeds this limit, you will be charged for the excess KM used.',
   'Your trip includes one pick-up and one drop as per the details provided. It does not include within-city travel beyond the route.',
@@ -78,7 +71,6 @@ function BookingInner() {
   const router = useRouter();
   const params = useSearchParams();
   const [rates, setRates] = useState(null);
-  const [termsOpen, setTermsOpen] = useState(false);
 
   const tripType = params.get('tripType') || 'airport';
   const vehicleId = params.get('vehicleId') || '';
@@ -138,6 +130,8 @@ function BookingInner() {
     if (!vehicle) return { inclusions: [], exclusions: [] };
     return buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, gstRate: rates?.settings?.gstRate });
   }, [tripType, vehicle, price, localPackageIdx, rates]);
+
+  const facilities = useMemo(() => buildFacilities(vehicle), [vehicle]);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -356,66 +350,13 @@ function BookingInner() {
                 </div>
               )}
 
-              {/* Inclusions / Exclusions */}
-              {(inclusions.length > 0 || exclusions.length > 0) && (
-                <div className="mt-4 rounded-xl border border-black/5 p-4 sm:p-5">
-                  <h2 className="font-display text-base font-bold text-asphalt">Inclusions/Exclusions</h2>
-
-                  {inclusions.length > 0 && (
-                    <div className="mt-4">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                        <span className="text-sm font-semibold text-emerald-600">Inclusions</span>
-                      </div>
-                      <ul className="mt-2 space-y-2">
-                        {inclusions.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-asphalt/80">
-                            <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {exclusions.length > 0 && (
-                    <div className="mt-5">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-red-500" />
-                        <span className="text-sm font-semibold text-red-500">Exclusions</span>
-                      </div>
-                      <ul className="mt-2 space-y-2">
-                        {exclusions.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-asphalt/80">
-                            <XIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => setTermsOpen((o) => !o)}
-                    className="focus-ring mt-5 flex w-full items-center justify-between border-t border-black/10 pt-4 text-sm font-semibold text-route-teal"
-                  >
-                    <span>Read Terms and Conditions</span>
-                    <ChevronDownIcon className={`h-4 w-4 transition-transform ${termsOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {termsOpen && (
-                    <ul className="mt-3 space-y-2 rounded-lg bg-mist p-4 text-xs text-asphalt/70">
-                      {TERMS_TEXT.map((t, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-asphalt/40" />
-                          <span>{t}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
+              {/* Inclusions / Exclusions / Facilities / T&C */}
+              <TripDetailsTabs
+                inclusions={inclusions}
+                exclusions={exclusions}
+                facilities={facilities}
+                terms={TERMS_TEXT}
+              />
 
               {/* Payment options */}
               {!enquiryOnly && (
