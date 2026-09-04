@@ -5,38 +5,45 @@ import { useState } from 'react';
 const PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE || '+917975630631';
 const EMAIL = process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'networkingtoursandtravels@gmail.com';
 
-// 382 coverage areas (0-5 km buffer, Bengaluru). Suffix rotates evenly across
-// "Taxi" / "Cabs" / "Taxi Service" for natural keyword variation instead of
-// repeating the same phrase 382 times (which reads as keyword stuffing to
-// Google and to visitors). `popular` marks the ~24 shown by default; the rest
-// appear once "View all areas" is expanded.
+// Clean area names - remove ALL suffixes and numbers
+const cleanAreaName = (name) => {
+  return name
+    .replace(/\s*(Cross|Road|Main Road|Railway Station|Station|Gate|Circle|Junction|Flyover|Bridge|Layout|Sector|Block|Stage|Phase|Extension|Belt|Corridor|Pocket|Buffer|Zone|Industrial Area|Industrial|Town|Village|Area|Metro|Point|Perimeter|Link|Pass|Border|Checkpost|Toll Plaza|Campus|Temple|Lake|Park|Buffer|Outer|Inner|Core|City|Upanagara|Satellite|Suburb|Industrial Suburb|1st|2nd|3rd|4th|5th|6th|7th|8th|9th|to|&|\+|\/|\[|\]|\(|\)|\-|\d+)/gi, '')
+    .replace(/\s+/, ' ')
+    .trim();
+};
+
+// Normalize area names to avoid duplicates
+const normalizeName = (name) => {
+  return cleanAreaName(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim();
+};
+
+// Original AREAS array (complete list)
 const AREAS = [
   { name: 'Kempegowda International Airport (KIAB)', suffix: 'Taxi', popular: true },
   { name: 'Devanahalli Town', suffix: 'Cabs', popular: false },
   { name: 'Devanahalli Aerospace Park', suffix: 'Taxi Service', popular: false },
   { name: 'KIADB Industrial Area Devanahalli', suffix: 'Taxi', popular: false },
   { name: 'Trumpet Flyover Zone', suffix: 'Cabs', popular: false },
-  { name: 'Nandi Hills Base', suffix: 'Taxi Service', popular: false },
-  { name: 'Nandi Hills Top', suffix: 'Taxi', popular: false },
+  { name: 'Nandi Hills ', suffix: 'Taxi Service', popular: false },
   { name: 'Chikkaballapur Town', suffix: 'Cabs', popular: false },
   { name: 'Muddenahalli', suffix: 'Taxi Service', popular: false },
   { name: 'Vijayapura Town', suffix: 'Taxi', popular: false },
   { name: 'Rajanukunte', suffix: 'Cabs', popular: false },
   { name: 'Kakolu', suffix: 'Taxi Service', popular: false },
-  { name: 'Doddaballapur Town', suffix: 'Taxi', popular: false },
-  { name: 'Doddaballapur Apparel Park', suffix: 'Cabs', popular: false },
+  { name: 'Doddaballapur', suffix: 'Taxi', popular: false },
   { name: 'Makalidurga', suffix: 'Taxi Service', popular: false },
   { name: 'Tubagere', suffix: 'Taxi', popular: false },
   { name: 'Yelahanka Old Town', suffix: 'Cabs', popular: false },
   { name: 'Yelahanka New Town', suffix: 'Taxi Service', popular: true },
-  { name: 'Yelahanka Air Force Station Zone', suffix: 'Taxi', popular: false },
   { name: 'Kogilu', suffix: 'Cabs', popular: false },
-  { name: 'Kogilu Cross', suffix: 'Taxi Service', popular: false },
   { name: 'Kattigenahalli', suffix: 'Taxi', popular: false },
   { name: 'Bagalur Village (North)', suffix: 'Cabs', popular: false },
   { name: 'Bagalur Cross', suffix: 'Taxi Service', popular: false },
   { name: 'Thanisandra', suffix: 'Taxi', popular: false },
-  { name: 'Thanisandra Main Road', suffix: 'Cabs', popular: false },
   { name: 'Bharatiya City Area', suffix: 'Taxi Service', popular: false },
   { name: 'Hegde Nagar', suffix: 'Taxi', popular: false },
   { name: 'Reva University Area', suffix: 'Cabs', popular: false },
@@ -45,15 +52,12 @@ const AREAS = [
   { name: 'Amruthahalli', suffix: 'Cabs', popular: false },
   { name: 'Sahakar Nagar', suffix: 'Taxi Service', popular: false },
   { name: 'Hebbal', suffix: 'Taxi', popular: true },
-  { name: 'Hebbal Kempapura', suffix: 'Cabs', popular: false },
   { name: 'Nagavara', suffix: 'Taxi Service', popular: false },
   { name: 'Manyata Tech Park Zone', suffix: 'Taxi', popular: false },
   { name: 'Hennur', suffix: 'Cabs', popular: true },
-  { name: 'Hennur Cross', suffix: 'Taxi Service', popular: false },
   { name: 'Kothanur', suffix: 'Taxi', popular: false },
   { name: 'Geddalahalli', suffix: 'Cabs', popular: false },
   { name: 'Horamavu', suffix: 'Taxi Service', popular: false },
-  { name: 'Horamavu Agara', suffix: 'Taxi', popular: false },
   { name: 'Babusapalya', suffix: 'Cabs', popular: false },
   { name: 'Chikka Banaswadi', suffix: 'Taxi Service', popular: false },
   { name: 'Banaswadi', suffix: 'Taxi', popular: false },
@@ -85,11 +89,9 @@ const AREAS = [
   { name: 'Budigere Cross', suffix: 'Taxi Service', popular: false },
   { name: 'Budigere Village', suffix: 'Taxi', popular: false },
   { name: 'Hoskote Town', suffix: 'Cabs', popular: false },
-  { name: 'Hoskote Industrial Area', suffix: 'Taxi Service', popular: false },
   { name: 'Soukya Road Area', suffix: 'Taxi', popular: false },
   { name: 'Pillagumpa Industrial Area', suffix: 'Cabs', popular: false },
   { name: 'Whitefield', suffix: 'Taxi Service', popular: true },
-  { name: 'Whitefield Railway Station Zone', suffix: 'Taxi', popular: false },
   { name: 'Hope Farm Junction', suffix: 'Cabs', popular: false },
   { name: 'Kadugodi', suffix: 'Taxi Service', popular: false },
   { name: 'Channasandra (East)', suffix: 'Taxi', popular: false },
@@ -125,8 +127,7 @@ const AREAS = [
   { name: 'Vimanapura', suffix: 'Taxi', popular: false },
   { name: 'Konena Agrahara', suffix: 'Cabs', popular: false },
   { name: 'Domlur', suffix: 'Taxi Service', popular: false },
-  { name: 'Indiranagar 1st Stage', suffix: 'Taxi', popular: true },
-  { name: 'Indiranagar 2nd Stage', suffix: 'Cabs', popular: false },
+  { name: 'Indiranagar', suffix: 'Taxi', popular: true },
   { name: '100 Feet Road Indiranagar', suffix: 'Taxi Service', popular: false },
   { name: 'Thippasandra', suffix: 'Taxi', popular: false },
   { name: 'New Thippasandra', suffix: 'Cabs', popular: false },
@@ -146,15 +147,11 @@ const AREAS = [
   { name: 'Victoria Layout', suffix: 'Taxi', popular: false },
   { name: 'Austin Town', suffix: 'Cabs', popular: false },
   { name: 'Neelasandra', suffix: 'Taxi Service', popular: false },
-  { name: 'Koramangala 1st Block', suffix: 'Taxi', popular: false },
-  { name: 'Koramangala 4th Block', suffix: 'Cabs', popular: true },
-  { name: 'Koramangala 5th & 6th Block', suffix: 'Taxi Service', popular: false },
-  { name: 'Koramangala 7th & 8th Block', suffix: 'Taxi', popular: false },
+  { name: 'Koramangala', suffix: 'Taxi', popular: false },
   { name: 'Ejipura', suffix: 'Cabs', popular: false },
   { name: 'Viveknagar', suffix: 'Taxi Service', popular: false },
   { name: 'National Games Village (NGV)', suffix: 'Taxi', popular: false },
-  { name: 'HSR Layout Sector 1 to 3', suffix: 'Cabs', popular: true },
-  { name: 'HSR Layout Sector 4 to 7', suffix: 'Taxi Service', popular: false },
+  { name: 'HSR Layout', suffix: 'Cabs', popular: true },
   { name: 'Agara Junction Area', suffix: 'Taxi', popular: false },
   { name: 'Kudlu Gate', suffix: 'Cabs', popular: false },
   { name: 'Singasandra', suffix: 'Taxi Service', popular: false },
@@ -170,22 +167,18 @@ const AREAS = [
   { name: 'Attibele Industrial Area', suffix: 'Taxi', popular: false },
   { name: 'Hosur Border (TN-KA Checkpost)', suffix: 'Cabs', popular: false },
   { name: 'Jigani Town', suffix: 'Taxi Service', popular: false },
-  { name: 'Jigani Industrial Area (APC Circle)', suffix: 'Taxi', popular: false },
-  { name: 'Anekal Town', suffix: 'Cabs', popular: false },
-  { name: 'Anekal Railway Station Area', suffix: 'Taxi Service', popular: false },
-  { name: 'Bommasandra Industrial Area', suffix: 'Taxi', popular: false },
+  { name: 'APC Circle', suffix: 'Taxi', popular: false },
+  { name: 'Anekal', suffix: 'Cabs', popular: false },
+  { name: 'Bommasandra', suffix: 'Taxi', popular: false },
   { name: 'Bommanahalli', suffix: 'Cabs', popular: false },
   { name: 'Mangammanapalya', suffix: 'Taxi Service', popular: false },
   { name: 'Silk Board Junction', suffix: 'Taxi', popular: false },
-  { name: 'BTM Layout 1st Stage', suffix: 'Cabs', popular: true },
-  { name: 'BTM Layout 2nd Stage', suffix: 'Taxi Service', popular: false },
+  { name: 'BTM Layout', suffix: 'Cabs', popular: true },
   { name: 'Tavarekere (BTM Area)', suffix: 'Taxi', popular: false },
   { name: 'Madiwala', suffix: 'Cabs', popular: false },
-  { name: 'Jayanagar 1st to 4th Block', suffix: 'Taxi Service', popular: true },
-  { name: 'Jayanagar 5th to 9th Block', suffix: 'Taxi', popular: false },
+  { name: 'Jayanagar', suffix: 'Taxi Service', popular: true },
   { name: 'South End Circle', suffix: 'Cabs', popular: false },
-  { name: 'JP Nagar Phase 1 to 4', suffix: 'Taxi Service', popular: true },
-  { name: 'JP Nagar Phase 5 to 9', suffix: 'Taxi', popular: false },
+  { name: 'JP Nagar', suffix: 'Taxi Service', popular: true },
   { name: 'Sarakki', suffix: 'Cabs', popular: false },
   { name: 'Yelachenahalli', suffix: 'Taxi Service', popular: false },
   { name: 'Konanakunte', suffix: 'Taxi', popular: false },
@@ -205,16 +198,12 @@ const AREAS = [
   { name: 'Kanakapura Road Corridor', suffix: 'Taxi Service', popular: true },
   { name: 'Kaggalipura', suffix: 'Taxi', popular: false },
   { name: 'Pattareddypalya', suffix: 'Cabs', popular: false },
-  { name: 'Harohalli Industrial Area', suffix: 'Taxi Service', popular: false },
   { name: 'Harohalli Town', suffix: 'Taxi', popular: false },
   { name: 'Maralavadi', suffix: 'Cabs', popular: false },
   { name: 'Kanakapura Town', suffix: 'Taxi Service', popular: false },
   { name: 'Dayananda Sagar University Campus Area', suffix: 'Taxi', popular: false },
   { name: 'Vasudevapura', suffix: 'Cabs', popular: false },
-  { name: 'Banashankari 1st Stage', suffix: 'Taxi Service', popular: false },
-  { name: 'Banashankari 2nd Stage', suffix: 'Taxi', popular: true },
-  { name: 'Banashankari 3rd Stage', suffix: 'Cabs', popular: false },
-  { name: 'Banashankari 6th Stage', suffix: 'Taxi Service', popular: false },
+  { name: 'Banashankari', suffix: 'Taxi Service', popular: false },
   { name: 'Padmanabhanagar', suffix: 'Taxi', popular: false },
   { name: 'Uttarahalli', suffix: 'Cabs', popular: false },
   { name: 'Subramanyapura', suffix: 'Taxi Service', popular: false },
@@ -247,8 +236,7 @@ const AREAS = [
   { name: 'Magadi Road Metro Zone', suffix: 'Taxi Service', popular: false },
   { name: 'Kamakshipalya', suffix: 'Taxi', popular: false },
   { name: 'Basaveshwaranagar', suffix: 'Cabs', popular: false },
-  { name: 'Rajajinagar 1st to 3rd Block', suffix: 'Taxi Service', popular: true },
-  { name: 'Rajajinagar 4th to 6th Block', suffix: 'Taxi', popular: false },
+  { name: 'Rajajinagar', suffix: 'Taxi Service', popular: true },
   { name: 'Mahalakshmi Layout', suffix: 'Cabs', popular: false },
   { name: 'Nandini Layout', suffix: 'Taxi Service', popular: false },
   { name: 'Kurubarahalli', suffix: 'Taxi', popular: false },
@@ -260,8 +248,7 @@ const AREAS = [
   { name: 'Magadi Town', suffix: 'Taxi', popular: false },
   { name: 'Solur', suffix: 'Cabs', popular: false },
   { name: 'Kudur', suffix: 'Taxi Service', popular: false },
-  { name: 'Malleshwaram 1st to 7th Main', suffix: 'Taxi', popular: true },
-  { name: 'Malleshwaram 8th to 18th Cross', suffix: 'Cabs', popular: false },
+  { name: 'Malleshwaram ', suffix: 'Taxi', popular: true },
   { name: 'Seshadripuram', suffix: 'Taxi Service', popular: false },
   { name: 'Kumara Park East & West', suffix: 'Taxi', popular: false },
   { name: 'High Grounds Zone', suffix: 'Cabs', popular: false },
@@ -273,11 +260,8 @@ const AREAS = [
   { name: 'Yeshwanthpur Town', suffix: 'Cabs', popular: false },
   { name: 'Yeshwanthpur Railway Station Zone', suffix: 'Taxi Service', popular: false },
   { name: 'Goraguntepalya', suffix: 'Taxi', popular: false },
-  { name: 'Peenya 1st & 2nd Stage', suffix: 'Cabs', popular: false },
-  { name: 'Peenya 3rd & 4th Stage', suffix: 'Taxi Service', popular: false },
+  { name: 'Peenya', suffix: 'Cabs', popular: false },
   { name: 'Jalahalli Cross', suffix: 'Taxi', popular: false },
-  { name: 'Jalahalli East', suffix: 'Cabs', popular: false },
-  { name: 'Jalahalli West', suffix: 'Taxi Service', popular: false },
   { name: 'Gangamma Circle', suffix: 'Taxi', popular: false },
   { name: 'Vidyaranyapura', suffix: 'Cabs', popular: false },
   { name: 'Abbigere', suffix: 'Taxi Service', popular: false },
@@ -395,6 +379,27 @@ const AREAS = [
   { name: 'Doddaballapur-Devanahalli Connecting Cross', suffix: 'Taxi', popular: false },
 ];
 
+// Create unique areas by normalizing names
+const uniqueAreas = [];
+const seenNames = new Set();
+
+AREAS.forEach(area => {
+  const normalized = normalizeName(area.name);
+  if (!seenNames.has(normalized)) {
+    seenNames.add(normalized);
+    const cleanName = cleanAreaName(area.name);
+    if (cleanName) {
+      uniqueAreas.push({
+        ...area,
+        cleanName: cleanName
+      });
+    }
+  }
+});
+
+// Popular areas - keep only unique ones
+const popularAreas = uniqueAreas.filter((a) => a.popular);
+
 function slugify(name) {
   return name
     .toLowerCase()
@@ -403,25 +408,20 @@ function slugify(name) {
     .replace(/^-+|-+$/g, '');
 }
 
-// NOTE: links point to `/?dest=<Area Name>` on the homepage. This assumes the
-// homepage's route search reads a `dest` query param to prefill the
-// destination field. If the actual param name is different, tell me and
-// I'll update AREA_HREF in one place.
 function areaHref(area) {
-  return `/?dest=${encodeURIComponent(area.name)}#book`;
+  return `/?dest=${encodeURIComponent(area.cleanName)}#book`;
 }
 
 const TRUST_BADGES = [
-  { icon: '📍', label: 'Live GPS Tracking' },
-  { icon: '🧼', label: 'Clean, Sanitized Cabs' },
-  { icon: '🛡️', label: 'Verified Drivers' },
-  { icon: '💳', label: 'Flexible Payment: ₹0 / 25% / 100% Advance' },
+  { icon: '', label: 'Live GPS Tracking' },
+  { icon: '', label: 'Clean, Sanitized Cabs' },
+  { icon: '', label: 'Verified Drivers' },
+  { icon: '', label: 'Flexible Payment: 0 / 25% / 100% Advance' },
 ];
 
 export default function Footer() {
   const [showAllAreas, setShowAllAreas] = useState(false);
-  const popularAreas = AREAS.filter((a) => a.popular);
-  const visibleAreas = showAllAreas ? AREAS : popularAreas;
+  const visibleAreas = showAllAreas ? uniqueAreas : popularAreas;
 
   return (
     <footer className="bg-route-teal text-white">
@@ -442,7 +442,6 @@ export default function Footer() {
               key={badge.label}
               className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-medium"
             >
-              <span aria-hidden="true" className="text-lg">{badge.icon}</span>
               <span>{badge.label}</span>
             </div>
           ))}
@@ -453,7 +452,7 @@ export default function Footer() {
           rel="noreferrer"
           className="mt-4 inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold hover:bg-white/25"
         >
-          ★ 4.9 rated &middot; Google reviews
+          ★ 4.9 rated · Google reviews
         </a>
       </div>
 
@@ -471,10 +470,10 @@ export default function Footer() {
           </div>
           <ul className="mt-3 space-y-2 text-sm text-white/85">
             <li>
-              <a className="hover:text-white" href={`tel:${PHONE}`}>📞 {PHONE}</a>
+              <a className="hover:text-white" href={`tel:${PHONE}`}>Phone: {PHONE}</a>
             </li>
             <li>
-              <a className="hover:text-white" href={`mailto:${EMAIL}`}>✉️ {EMAIL}</a>
+              <a className="hover:text-white" href={`mailto:${EMAIL}`}>Email: {EMAIL}</a>
             </li>
             <li>
               <a className="hover:text-white" href="/my-bookings">Track my booking</a>
@@ -518,12 +517,12 @@ export default function Footer() {
           </div>
           <ul className="mt-4 flex flex-wrap gap-x-2 gap-y-2 text-sm text-white/80">
             {visibleAreas.map((area, i) => (
-              <li key={`${area.name}-${i}`} className="after:mx-2 after:text-white/30 after:content-['|'] last:after:content-none">
+              <li key={`${area.cleanName}-${i}`} className="after:mx-2 after:text-white/30 after:content-['|'] last:after:content-none">
                 <a
                   href={areaHref(area)}
                   className="hover:text-white hover:underline"
                 >
-                  {area.name} {area.suffix}
+                  {i < 50 ? `Book Local Cab in ${area.cleanName}` : `Book ${area.cleanName} Taxi`}
                 </a>
               </li>
             ))}
@@ -535,7 +534,7 @@ export default function Footer() {
             className="mt-5 inline-flex items-center gap-1 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold hover:bg-white/25"
           >
             <span aria-hidden="true">{showAllAreas ? '−' : '+'}</span>
-            {showAllAreas ? 'Show fewer areas' : `View all ${AREAS.length} areas we cover`}
+            {showAllAreas ? 'Show fewer areas' : `View all ${uniqueAreas.length} areas we cover`}
           </button>
         </div>
       </div>
