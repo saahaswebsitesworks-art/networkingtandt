@@ -21,7 +21,12 @@ export default function RatesManager({ initialVehicles, initialSettings }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Could not save vehicle');
     setVehicles(data.vehicles);
-    setEditingId(null);
+    // Don't close the editor on save — each section saves independently,
+    // and closing here is what was making earlier sections look like they
+    // vanished. If this was a brand-new vehicle, switch editingId from
+    // 'new' to its real id so the next section save PUTs instead of
+    // re-POSTing.
+    setEditingId(id);
   }
 
   async function handleDelete(id) {
