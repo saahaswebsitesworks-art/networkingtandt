@@ -1,3 +1,4 @@
+import Script from 'next/script';
 import { Space_Grotesk, Inter } from 'next/font/google';
 import './globals.css';
 import FloatingContact from '@/components/FloatingContact';
@@ -26,6 +27,21 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <body className="font-body antialiased">
+        {/* Google tag (gtag.js) — Google Ads conversion tracking */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-2ZVPM1XYD7"
+          strategy="afterInteractive"
+        />
+        <Script id="google-tag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-2ZVPM1XYD7');
+            gtag('config', 'AW-18042899918');
+          `}
+        </Script>
+
         {children}
         <FloatingContact />
       </body>

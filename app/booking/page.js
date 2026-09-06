@@ -185,6 +185,13 @@ function BookingInner() {
     if (!res.ok) throw new Error(data.error || 'Something went wrong');
     setResult(data.booking);
     setSubmitting(false);
+
+    // Google Ads conversion — fires once a booking (or enquiry) is actually confirmed
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+      window.gtag('event', 'conversion', {
+        send_to: 'AW-18042899918/JKKRCIXdxu0cEM6bw5tD',
+      });
+    }
   }
 
   function openRazorpay({ order, keyId }) {
