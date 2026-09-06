@@ -6,11 +6,27 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ConfirmationCard from '@/components/ConfirmationCard';
 import RouteMapEmbed from '@/components/RouteMapEmbed';
-import TripDetailsTabs from '@/components/TripDetailsTabs';
 import { TRIP_TYPES, calculatePrice, formatINR } from '@/lib/pricing';
 import { PAYMENT_OPTIONS, paymentBreakdown } from '@/lib/payments';
 
 const RAZORPAY_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
+
+// Inline icons (no external icon package needed)
+function CheckIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+function XIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
 
 function buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, gstRate }) {
   const inclusions = ['Base Fare and Fuel Charges'];
@@ -29,6 +45,8 @@ function buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, 
     inclusions.push('Driver Allowance');
   }
 
+  inclusions.push('AC');
+
   if (tripType === 'local' && vehicle?.local?.packages?.length) {
     const pkg = vehicle.local.packages[localPackageIdx] || vehicle.local.packages[0];
     exclusions.push(`Beyond package: ₹${vehicle.local.extraKmRate}/km after ${pkg.km} km`);
@@ -42,23 +60,13 @@ function buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, 
   return { inclusions, exclusions };
 }
 
-// Facilities are derived straight from the vehicle, independent of trip
-// type. AC/Non-AC is read from the vehicle's label text rather than
-// assumed, so it stays correct for vehicles like the Non-AC Tempo
-// Traveller (previously "AC" was always shown as an inclusion for every
-// vehicle, which was wrong for Non-AC options).
-// Bags is only shown when the vehicle defines a `bags` count in the rates
-// data — Tempo Traveller intentionally has none set, so no bags line shows
-// for it.
-function buildFacilities(vehicle) {
-  if (!vehicle) return [];
-  const facilities = [];
-  if (vehicle.seats) facilities.push(`${vehicle.seats} Seater`);
-  if (vehicle.bags) facilities.push(`${vehicle.bags} Bags`);
-  const isNonAc = /non[\s-]?ac/i.test(vehicle.label || '');
-  facilities.push(isNonAc ? 'Non-AC' : 'AC');
-  return facilities;
-}
+const FACILITIES_TEXT = [
+  'Live GPS tracking on every trip',
+  'Verified, professional drivers',
+  'Clean, sanitized cabs',
+  '24x7 customer support',
+  'Flexible payment: ₹0 / 25% / 100% advance',
+];
 
 const TERMS_TEXT = [
   'Your trip has a KM limit. If your usage exceeds this limit, you will be charged for the excess KM used.',
@@ -71,6 +79,7 @@ function BookingInner() {
   const router = useRouter();
   const params = useSearchParams();
   const [rates, setRates] = useState(null);
+  const [activeTab, setActiveTab] = useState('inclusions');
 
   const tripType = params.get('tripType') || 'airport';
   const vehicleId = params.get('vehicleId') || '';
@@ -130,8 +139,6 @@ function BookingInner() {
     if (!vehicle) return { inclusions: [], exclusions: [] };
     return buildInclusionsExclusions({ tripType, vehicle, price, localPackageIdx, gstRate: rates?.settings?.gstRate });
   }, [tripType, vehicle, price, localPackageIdx, rates]);
-
-  const facilities = useMemo(() => buildFacilities(vehicle), [vehicle]);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -324,40 +331,6 @@ function BookingInner() {
                 </div>
               )}
 
-              {!price?.enquiryOnly && price?.breakdown && (
-                <div className="mt-4 rounded-xl bg-mist p-4">
-                  <ul className="space-y-1 text-sm text-asphalt/80">
-                    {price.breakdown.map((b, i) => (
-                      <li key={i} className="flex items-center justify-between gap-4">
-                        <span>{b.label}</span>
-                        {b.amount !== null && <span className="font-medium">{formatINR(b.amount)}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-3 flex items-center justify-between border-t border-black/10 pt-3">
-                    <span className="font-display font-semibold text-asphalt">Total (incl. GST)</span>
-                    <span className="font-display text-xl font-bold text-asphalt">{formatINR(price.total)}</span>
-                  </div>
-                  <div className="mt-1 text-xs text-asphalt/50">
-                    GST ({Math.round((price.gstRate || 0) * 100)}%) included. Choose how you’d like to pay below.
-                  </div>
-                </div>
-              )}
-
-              {price?.enquiryOnly && (
-                <div className="mt-4 rounded-xl bg-mist p-4 text-sm text-asphalt/70">
-                  Price on request — our team will call you with a quote for this group trip.
-                </div>
-              )}
-
-              {/* Inclusions / Exclusions / Facilities / T&C */}
-              <TripDetailsTabs
-                inclusions={inclusions}
-                exclusions={exclusions}
-                facilities={facilities}
-                terms={TERMS_TEXT}
-              />
-
               {/* Payment options */}
               {!enquiryOnly && (
                 <div className="mt-6">
@@ -396,6 +369,33 @@ function BookingInner() {
                   )}
                 </div>
               )}
+
+              {!price?.enquiryOnly && price?.breakdown && (
+                <div className="mt-4 rounded-xl bg-mist p-4">
+                  <ul className="space-y-1 text-sm text-asphalt/80">
+                    {price.breakdown.map((b, i) => (
+                      <li key={i} className="flex items-center justify-between gap-4">
+                        <span>{b.label}</span>
+                        {b.amount !== null && <span className="font-medium">{formatINR(b.amount)}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 flex items-center justify-between border-t border-black/10 pt-3">
+                    <span className="font-display font-semibold text-asphalt">Total (incl. GST)</span>
+                    <span className="font-display text-xl font-bold text-asphalt">{formatINR(price.total)}</span>
+                  </div>
+                  <div className="mt-1 text-xs text-asphalt/50">
+                    GST ({Math.round((price.gstRate || 0) * 100)}%) included. Choose how you’d like to pay below.
+                  </div>
+                </div>
+              )}
+
+              {price?.enquiryOnly && (
+                <div className="mt-4 rounded-xl bg-mist p-4 text-sm text-asphalt/70">
+                  Price on request — our team will call you with a quote for this group trip.
+                </div>
+              )}
+
 
               <form onSubmit={handleSubmit} className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
@@ -453,6 +453,79 @@ function BookingInner() {
                   {submitLabel}
                 </button>
               </form>
+              {/* Inclusions / Exclusions / Facilities / T&C */}
+              {(inclusions.length > 0 || exclusions.length > 0) && (
+                <div className="mt-4 rounded-xl border border-black/5 sm:p-1">
+                  <div className="grid grid-cols-4 gap-1 border-b border-black/5 p-1">
+                    {[
+                      { id: 'inclusions', label: 'Inclusions' },
+                      { id: 'exclusions', label: 'Exclusions' },
+                      { id: 'facilities', label: 'Facilities' },
+                      { id: 'terms', label: 'T&C' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`focus-ring min-w-0 truncate rounded-lg px-1 py-2 text-[10px] font-bold uppercase leading-tight tracking-tight transition sm:text-xs sm:tracking-wide ${
+                          activeTab === tab.id
+                            ? 'bg-route-teal text-white'
+                            : 'text-asphalt/50 hover:bg-mist'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="p-4 sm:p-5">
+                    {activeTab === 'inclusions' && (
+                      <ul className="space-y-2">
+                        {inclusions.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-asphalt/80">
+                            <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {activeTab === 'exclusions' && (
+                      <ul className="space-y-2">
+                        {exclusions.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-asphalt/80">
+                            <XIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {activeTab === 'facilities' && (
+                      <ul className="space-y-2">
+                        {FACILITIES_TEXT.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-asphalt/80">
+                            <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-route-teal" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {activeTab === 'terms' && (
+                      <ul className="space-y-2">
+                        {TERMS_TEXT.map((t, i) => (
+                          <li key={i} className="flex gap-2 text-sm text-asphalt/70">
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-asphalt/40" />
+                            <span>{t}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
+
             </div>
           </>
         )}
