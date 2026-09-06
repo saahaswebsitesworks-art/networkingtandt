@@ -408,8 +408,9 @@ function slugify(name) {
     .replace(/^-+|-+$/g, '');
 }
 
+// Sets this area as the PICKUP point on the search form when clicked.
 function areaHref(area) {
-  return `/?dest=${encodeURIComponent(area.cleanName)}#book`;
+  return `/?pickup=${encodeURIComponent(area.cleanName)}#book`;
 }
 
 const TRUST_BADGES = [
