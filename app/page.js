@@ -15,18 +15,20 @@ export default function Home() {
       <TravelExpertPopup />
       <Header />
 
-      {/* Classic deep-green hero — single line, no icons, no paragraph */}
-      <section className="relative overflow-hidden bg-forest-gradient pb-14 pt-10 text-white sm:pb-20 sm:pt-14">
+      {/* Classic deep-green hero — single line, no icons, no paragraph.
+          Bottom padding = booking card overlap + ~24px gap, so the heading
+          sits just above the card with no wasted space on any screen. */}
+      <section className="relative overflow-hidden bg-forest-gradient pb-[6.5rem] pt-7 text-white sm:pb-[7.5rem] sm:pt-10 lg:pt-12">
         <HeroRoute />
         <div className="relative mx-auto max-w-5xl px-5 text-center">
-          <h1 className="rise rise-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="rise rise-2 font-display text-[1.75rem] font-bold leading-tight tracking-tight [text-wrap:balance] sm:text-4xl lg:text-5xl">
             Karnataka&apos;s trusted taxi service
           </h1>
         </div>
       </section>
 
       {/* Booking card overlaps the hero, like Savaari's search widget */}
-      <div id="book" className="relative z-10 mx-auto -mt-20 max-w-5xl scroll-mt-24 px-5 sm:-mt-24">
+      <div id="book" className="relative z-10 mx-auto -mt-20 max-w-5xl scroll-mt-24 px-4 sm:-mt-24 sm:px-5">
         <SearchForm />
       </div>
 
@@ -36,7 +38,7 @@ export default function Home() {
 
       {/* Blue "what sets us apart" bar */}
       <section className="bg-route-teal text-white">
-        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:grid-cols-4">
+        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { t: 'Pay your way', d: 'After the ride, 25% or full advance' },
             { t: 'Real people, fast replies', d: 'Call or WhatsApp a local team' },
