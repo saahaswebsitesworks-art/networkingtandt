@@ -3,6 +3,9 @@ import { addBooking, getBookings, makeBookingId } from '@/lib/db';
 import { sendBookingEmail } from '@/lib/mailer';
 import { paymentBreakdown } from '@/lib/payments';
 
+// Nodemailer needs the Node.js runtime (not Edge).
+export const runtime = 'nodejs';
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -65,11 +68,19 @@ export async function POST(req) {
 
     await addBooking(booking);
 
-    // Fire-and-forget email; never block the booking on this, but DO log
-    // failures so they're visible in the server console instead of vanishing.
-    sendBookingEmail(booking).catch((err) => {
+    // AWAIT the email so Vercel doesn't shut the function down before it's
+    // sent. Failures are logged but never block the booking — it's already
+    // saved above, and the customer still gets a success response.
+    try {
+      const mailResult = await sendBookingEmail(booking);
+      if (mailResult?.error) {
+        console.error('[booking email] failed for', booking.id, mailResult.code || '', mailResult.error);
+      } else if (mailResult?.skipped) {
+        console.warn('[booking email] skipped for', booking.id, mailResult.missing || '');
+      }
+    } catch (err) {
       console.error('[booking email] failed to send for', booking.id, err?.message || err);
-    });
+    }
 
     return NextResponse.json({ ok: true, booking });
   } catch (err) {
